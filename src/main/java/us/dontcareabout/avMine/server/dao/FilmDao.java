@@ -14,7 +14,7 @@ public class FilmDao {
 
 	public List<Film> fetchAll() {
 		Session session = HibernateUtil.session();
-		List<Film> result = session.createQuery("from film", Film.class).list();
+		List<Film> result = session.createQuery("from Film", Film.class).list();
 		session.close();
 		return result;
 	}
