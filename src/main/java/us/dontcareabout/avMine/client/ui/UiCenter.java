@@ -6,6 +6,11 @@ import com.sencha.gxt.widget.core.client.Window;
 import us.dontcareabout.avMine.client.component.RwdRootPanel;
 
 public class UiCenter {
+	private final static MainView mainView = new MainView();
+
+	public static void start() {
+		RwdRootPanel.setComponent(mainView);
+	}
 
 	//////////////////////////////////////////////////////////////////
 
