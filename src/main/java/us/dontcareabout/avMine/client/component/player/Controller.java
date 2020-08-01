@@ -1,5 +1,6 @@
 package us.dontcareabout.avMine.client.component.player;
 
+import com.google.gwt.dom.client.MediaElement;
 import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.media.client.Video;
 import com.sencha.gxt.chart.client.draw.RGB;
@@ -17,13 +18,13 @@ public class Controller extends LayerContainer {
 	private static int timeHieght = timeFontSize + 2;
 	private static int timelineHeight = 12;
 
-	private final Video video;
+	Video video = Video.createIfSupported();
 
 	private TimelineLayer timeLine = new TimelineLayer();
 	private TimeLayer time = new TimeLayer();
 
-	public Controller(Video v) {
-		video = v;
+	public Controller() {
+		bindEvents(video.getMediaElement());
 		addLayer(time);
 		addLayer(timeLine);
 	}
@@ -42,6 +43,17 @@ public class Controller extends LayerContainer {
 		time.setLX(0);
 		time.setLY(height - timeHieght);
 		time.resize(timeFontSize * 9, timeHieght);
+	}
+
+	private native void bindEvents(MediaElement mediaElement) /*-{
+		var self = this;
+		mediaElement.addEventListener("timeupdate", function(e) {
+			self.@us.dontcareabout.avMine.client.component.player.Controller::onTimeupdate()();
+		});
+	}-*/;
+
+	private void onTimeupdate() {
+		setTime(video.getCurrentTime(), video.getDuration());
 	}
 
 	private class TimelineLayer extends BaseLS {
