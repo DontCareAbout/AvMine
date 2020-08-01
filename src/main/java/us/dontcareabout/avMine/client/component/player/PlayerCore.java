@@ -13,7 +13,9 @@ import us.dontcareabout.gxt.client.draw.LTextSprite;
 import us.dontcareabout.gxt.client.draw.LayerContainer;
 import us.dontcareabout.gxt.client.draw.LayerSprite;
 
-public class Controller extends LayerContainer {
+//把 Video 變成 PlayerCore 的 field 純粹是因為控制起來比較方便 XD
+//暫時不考慮抽 interface 讓 VideoPlayer 可以自行決定 implementation... [逃]
+class PlayerCore extends LayerContainer {
 	private static int timeFontSize = 14;
 	private static int timeHieght = timeFontSize + 2;
 	private static int timelineHeight = 12;
@@ -23,15 +25,10 @@ public class Controller extends LayerContainer {
 	private TimelineLayer timeLine = new TimelineLayer();
 	private TimeLayer time = new TimeLayer();
 
-	public Controller() {
+	PlayerCore() {
 		bindEvents(video.getMediaElement());
 		addLayer(time);
 		addLayer(timeLine);
-	}
-
-	public void setTime(double now, double total) {
-		timeLine.setTime(now, total);
-		time.setTime(now, total);
 	}
 
 	@Override
@@ -45,16 +42,17 @@ public class Controller extends LayerContainer {
 		time.resize(timeFontSize * 9, timeHieght);
 	}
 
+	private void onTimeupdate() {
+		timeLine.setTime(video.getCurrentTime(), video.getDuration());
+		time.setTime(video.getCurrentTime(), video.getDuration());
+	}
+
 	private native void bindEvents(MediaElement mediaElement) /*-{
 		var self = this;
 		mediaElement.addEventListener("timeupdate", function(e) {
-			self.@us.dontcareabout.avMine.client.component.player.Controller::onTimeupdate()();
+			self.@us.dontcareabout.avMine.client.component.player.PlayerCore::onTimeupdate()();
 		});
 	}-*/;
-
-	private void onTimeupdate() {
-		setTime(video.getCurrentTime(), video.getDuration());
-	}
 
 	private class TimelineLayer extends BaseLS {
 		final int barYMargin = 2;
@@ -126,12 +124,11 @@ public class Controller extends LayerContainer {
 	}
 
 	//Refactory GF
-	private native double eventLayerX(NativeEvent evt) /*-{
+	private static native double eventLayerX(NativeEvent evt) /*-{
 		return evt.layerX || 0;
 	}-*/;
 
-	private native double eventLayerY(NativeEvent evt) /*-{
+	private static native double eventLayerY(NativeEvent evt) /*-{
 		return evt.layerY || 0;
 	}-*/;
-
 }
