@@ -3,6 +3,7 @@ package us.dontcareabout.avMine.shared.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Range;
 
 public class RangeUtil {
@@ -13,6 +14,8 @@ public class RangeUtil {
 	 * 將指定格式的字串轉為 {@link Range} instance。
 	 */
 	public static Range<Integer> parse(String string) {
+		Preconditions.checkNotNull(string);
+
 		String[] array = string.trim().split(toChar);
 		int a0 = Integer.parseInt(array[0].trim());
 		int a1 = Integer.parseInt(array[1].trim());
@@ -30,6 +33,8 @@ public class RangeUtil {
 	 * 將指定格式的字串，轉為 type 為 {@link Range} 的 {@link List}。
 	 */
 	public static List<Range<Integer>> parseList(String string) {
+		Preconditions.checkNotNull(string);
+
 		ArrayList<Range<Integer>> result = new ArrayList<>();
 
 		for (String term : string.split(splitChar)) {
@@ -39,5 +44,25 @@ public class RangeUtil {
 		}
 
 		return result;
+	}
+
+	public static String toString(Range<Integer> r) {
+		Preconditions.checkNotNull(r);
+		return r.lowerEndpoint() + toChar + r.upperEndpoint();
+	}
+
+	public static String toString(List<Range<Integer>> list) {
+		Preconditions.checkNotNull(list);
+
+		if (list.size() == 0) { return ""; }
+
+		StringBuilder result = new StringBuilder(toString(list.get(0)));
+
+		for (int i = 1; i < list.size(); i++) {
+			result.append(splitChar);
+			result.append(toString(list.get(i)));
+		}
+
+		return result.toString();
 	}
 }
