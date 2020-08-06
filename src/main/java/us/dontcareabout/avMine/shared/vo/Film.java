@@ -25,7 +25,7 @@ public class Film {
 
 	private int score;
 
-	private String cutSlice;
+	private String hotSlice;
 
 	public long getId() {
 		return id;
@@ -83,11 +83,11 @@ public class Film {
 		this.score = score;
 	}
 
-	public String getCutSlice() {
-		return cutSlice;
+	public String getHotSlice() {
+		return hotSlice;
 	}
 
-	public void setCutSlice(String cutSlice) {
-		this.cutSlice = cutSlice;
+	public void setHotSlice(String hotSlice) {
+		this.hotSlice = hotSlice;
 	}
 }
