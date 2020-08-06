@@ -1,5 +1,9 @@
 package us.dontcareabout.avMine.client.component.player;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.collect.Range;
 import com.google.gwt.dom.client.MediaElement;
 import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.event.dom.client.LoadedMetadataEvent;
@@ -28,7 +32,8 @@ class PlayerCore extends LayerContainer {
 	private TimeLayer time = new TimeLayer();
 
 	/** 若值為 -1 則代表 metadata 還沒 ready。 */
-	private double duration;
+	private double duration = -1;
+	private List<Range<Integer>> hotSlice;
 
 	PlayerCore() {
 		bindEvents(video.getMediaElement());
@@ -47,6 +52,11 @@ class PlayerCore extends LayerContainer {
 	void setSrc(String url) {
 		duration = -1;
 		video.setSrc(url);
+	}
+
+	void setHotSlice(List<Range<Integer>> hotList) {
+		hotSlice = hotList;
+		timeLine.genHotSlice();
 	}
 
 	@Override
@@ -78,6 +88,7 @@ class PlayerCore extends LayerContainer {
 		final int barHeight = timelineHeight - (barYMargin * 2);
 		private LRectangleSprite totalBar = new LRectangleSprite();
 		private LRectangleSprite nowBar = new LRectangleSprite();
+		private ArrayList<HotBlock> hotBlockList = new ArrayList<>();
 		private double nowRatio;
 
 		TimelineLayer() {
@@ -92,6 +103,22 @@ class PlayerCore extends LayerContainer {
 					video.setCurrentTime(video.getDuration() * eventLayerX(event.getBrowserEvent()) / getWidth());
 				}
 			});
+		}
+
+		private void genHotSlice() {
+			for (HotBlock rs : hotBlockList) {
+				remove(rs);
+			}
+
+			for (Range<Integer> r : hotSlice) {
+				HotBlock hot = new HotBlock(r);
+				hotBlockList.add(hot);
+				add(hot);
+				redeploy();
+			}
+
+			//adjustMember() 的由 setTime() 觸發就好
+			//理論上 genHostSlice() 一定會比 load metadata event 來得快
 		}
 
 		private void setTime(double now, double total) {
@@ -111,6 +138,27 @@ class PlayerCore extends LayerContainer {
 			nowBar.setLY(barYMargin);
 			nowBar.setWidth(getWidth() * nowRatio);
 			nowBar.setHeight(barHeight);
+
+			//正常狀況應該不會出現沒 duration 但是卻要調整 hotBlockList
+			//不過預防萬一還是擋一下......
+			if (duration == -1) { return; }
+
+			double wUnit = getWidth() / duration;
+			for (HotBlock hot : hotBlockList) {
+				hot.setLX(hot.range.lowerEndpoint() * wUnit);
+				hot.setLY(barYMargin);
+				hot.setWidth((hot.range.upperEndpoint() - hot.range.lowerEndpoint()) * wUnit);
+				hot.setHeight(barHeight);
+			}
+		}
+
+		private class HotBlock extends LRectangleSprite {
+			private Range<Integer> range;
+
+			HotBlock(Range<Integer> r) {
+				range = r;
+				setFill(RGB.DARKGRAY);
+			}
 		}
 	}
 
