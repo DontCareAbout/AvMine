@@ -2,6 +2,8 @@ package us.dontcareabout.avMine.client.component.player;
 
 import com.google.gwt.dom.client.MediaElement;
 import com.google.gwt.dom.client.NativeEvent;
+import com.google.gwt.event.dom.client.LoadedMetadataEvent;
+import com.google.gwt.event.dom.client.LoadedMetadataHandler;
 import com.google.gwt.media.client.Video;
 import com.sencha.gxt.chart.client.draw.RGB;
 import com.sencha.gxt.chart.client.draw.sprite.SpriteSelectionEvent;
@@ -25,10 +27,26 @@ class PlayerCore extends LayerContainer {
 	private TimelineLayer timeLine = new TimelineLayer();
 	private TimeLayer time = new TimeLayer();
 
+	/** 若值為 -1 則代表 metadata 還沒 ready。 */
+	private double duration;
+
 	PlayerCore() {
 		bindEvents(video.getMediaElement());
 		addLayer(time);
 		addLayer(timeLine);
+
+		video.addLoadedMetadataHandler(new LoadedMetadataHandler() {
+			@Override
+			public void onLoadedMetadata(LoadedMetadataEvent event) {
+				duration = video.getDuration();
+				onTimeupdate();
+			}
+		});
+	}
+
+	void setSrc(String url) {
+		duration = -1;
+		video.setSrc(url);
 	}
 
 	@Override
@@ -43,8 +61,9 @@ class PlayerCore extends LayerContainer {
 	}
 
 	private void onTimeupdate() {
-		timeLine.setTime(video.getCurrentTime(), video.getDuration());
-		time.setTime(video.getCurrentTime(), video.getDuration());
+		//會炸 timeupdate event 的時候一定就有 duration 了
+		timeLine.setTime(video.getCurrentTime(), duration);
+		time.setTime(video.getCurrentTime(), duration);
 	}
 
 	private native void bindEvents(MediaElement mediaElement) /*-{
