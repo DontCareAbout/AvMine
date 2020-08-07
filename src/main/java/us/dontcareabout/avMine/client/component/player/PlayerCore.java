@@ -33,6 +33,8 @@ class PlayerCore extends LayerContainer {
 
 	/** 若值為 -1 則代表 metadata 還沒 ready。 */
 	private double duration = -1;
+
+	private boolean isHotMode;
 	private List<Range<Integer>> hotSlice;
 	private int hotIndex;
 
@@ -53,6 +55,10 @@ class PlayerCore extends LayerContainer {
 	void setSrc(String url) {
 		duration = -1;
 		video.setSrc(url);
+	}
+
+	void setHotMode(boolean isHot) {
+		isHotMode = isHot;
 	}
 
 	void setHotSlice(List<Range<Integer>> hotList) {
@@ -77,6 +83,7 @@ class PlayerCore extends LayerContainer {
 		timeLine.setTime(video.getCurrentTime(), duration);
 		time.setTime(video.getCurrentTime(), duration);
 
+		if (!isHotMode) { return; }
 		if (hotSlice.size() == 0) { return; }
 
 		Range<Integer> hot = hotSlice.get(hotIndex);
@@ -84,10 +91,10 @@ class PlayerCore extends LayerContainer {
 
 		//在熱區中，沒事
 		if (hot.contains((int)current)) { return; }
-		
+
 		//目前時間小於熱區的起始時間，跳到熱區的起始時間
 		if (current < hot.lowerEndpoint()) { video.setCurrentTime(hot.lowerEndpoint()); };
-		
+
 		//目前時間大於熱區的結束時間，要看狀況
 		if (current > hot.upperEndpoint()) {
 			//不是最後一個熱區，就往下個熱區去
@@ -125,7 +132,23 @@ class PlayerCore extends LayerContainer {
 			addSpriteSelectionHandler(new SpriteSelectionHandler() {
 				@Override
 				public void onSpriteSelect(SpriteSelectionEvent event) {
-					video.setCurrentTime(video.getDuration() * eventLayerX(event.getBrowserEvent()) / getWidth());
+					double newTime = video.getDuration() * eventLayerX(event.getBrowserEvent()) / getWidth();
+					video.setCurrentTime(newTime);
+
+					if (!isHotMode) { return; }
+
+					//重新調整為合理的 hotIndex
+					int newHotIndex = hotSlice.size() - 1;
+
+					for (; newHotIndex > 0; newHotIndex--) {
+						//只用 lower bound 來考慮
+						//不用判斷 hotSlice[0]，比 hotSlice[1] 小的都判定為 0
+						if (newTime > hotSlice.get(newHotIndex).lowerEndpoint()) {
+							break;
+						}
+					}
+
+					hotIndex = newHotIndex;
 				}
 			});
 		}
