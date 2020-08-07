@@ -102,7 +102,9 @@ class PlayerCore extends LayerContainer {
 				hotIndex++;
 				video.setCurrentTime(hotSlice.get(hotIndex).lowerEndpoint());
 			} else {	//已經是最後一個熱區
-				//TODO
+				video.setCurrentTime(hotSlice.get(hotIndex).upperEndpoint());
+				video.pause();
+				//TODO 有播放清單 + 連續播放的功能後，這裡要炸 event 換下一片
 			}
 		}
 	}
