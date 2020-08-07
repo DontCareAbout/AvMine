@@ -34,6 +34,7 @@ class PlayerCore extends LayerContainer {
 	/** 若值為 -1 則代表 metadata 還沒 ready。 */
 	private double duration = -1;
 	private List<Range<Integer>> hotSlice;
+	private int hotIndex;
 
 	PlayerCore() {
 		bindEvents(video.getMediaElement());
@@ -56,6 +57,7 @@ class PlayerCore extends LayerContainer {
 
 	void setHotSlice(List<Range<Integer>> hotList) {
 		hotSlice = hotList;
+		hotIndex = 0;
 		timeLine.genHotSlice();
 	}
 
@@ -74,6 +76,28 @@ class PlayerCore extends LayerContainer {
 		//會炸 timeupdate event 的時候一定就有 duration 了
 		timeLine.setTime(video.getCurrentTime(), duration);
 		time.setTime(video.getCurrentTime(), duration);
+
+		if (hotSlice.size() == 0) { return; }
+
+		Range<Integer> hot = hotSlice.get(hotIndex);
+		double current = video.getCurrentTime();
+
+		//在熱區中，沒事
+		if (hot.contains((int)current)) { return; }
+		
+		//目前時間小於熱區的起始時間，跳到熱區的起始時間
+		if (current < hot.lowerEndpoint()) { video.setCurrentTime(hot.lowerEndpoint()); };
+		
+		//目前時間大於熱區的結束時間，要看狀況
+		if (current > hot.upperEndpoint()) {
+			//不是最後一個熱區，就往下個熱區去
+			if (hotIndex < hotSlice.size() - 1) {
+				hotIndex++;
+				video.setCurrentTime(hotSlice.get(hotIndex).lowerEndpoint());
+			} else {	//已經是最後一個熱區
+				//TODO
+			}
+		}
 	}
 
 	private native void bindEvents(MediaElement mediaElement) /*-{
@@ -96,6 +120,7 @@ class PlayerCore extends LayerContainer {
 			totalBar.setFill(RGB.LIGHTGRAY);
 			add(nowBar);
 			nowBar.setFill(RGB.RED);
+			nowBar.setLZIndex(10);	//hotBlockList 後面才會加入，所以要給 nowBar 指定 z-index 才不會被蓋住
 
 			addSpriteSelectionHandler(new SpriteSelectionHandler() {
 				@Override
