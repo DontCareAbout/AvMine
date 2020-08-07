@@ -33,9 +33,9 @@ public class RangeUtil {
 	 * 將指定格式的字串，轉為 type 為 {@link Range} 的 {@link List}。
 	 */
 	public static List<Range<Integer>> parseList(String string) {
-		Preconditions.checkNotNull(string);
-
 		ArrayList<Range<Integer>> result = new ArrayList<>();
+
+		if (string == null) { return result; }
 
 		for (String term : string.split(splitChar)) {
 			Range<Integer> r = parse(term);
