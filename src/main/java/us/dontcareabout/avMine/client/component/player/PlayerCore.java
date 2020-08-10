@@ -9,25 +9,36 @@ import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.event.dom.client.LoadedMetadataEvent;
 import com.google.gwt.event.dom.client.LoadedMetadataHandler;
 import com.google.gwt.media.client.Video;
+import com.google.gwt.resources.client.ImageResource;
 import com.sencha.gxt.chart.client.draw.RGB;
+import com.sencha.gxt.chart.client.draw.sprite.SpriteOutEvent;
+import com.sencha.gxt.chart.client.draw.sprite.SpriteOutEvent.SpriteOutHandler;
+import com.sencha.gxt.chart.client.draw.sprite.SpriteOverEvent;
+import com.sencha.gxt.chart.client.draw.sprite.SpriteOverEvent.SpriteOverHandler;
 import com.sencha.gxt.chart.client.draw.sprite.SpriteSelectionEvent;
 import com.sencha.gxt.chart.client.draw.sprite.SpriteSelectionEvent.SpriteSelectionHandler;
 
+import us.dontcareabout.avMine.client.util.Material;
 import us.dontcareabout.avMine.client.util.TimeUtil;
+import us.dontcareabout.gxt.client.draw.LImageSprite;
 import us.dontcareabout.gxt.client.draw.LRectangleSprite;
 import us.dontcareabout.gxt.client.draw.LTextSprite;
 import us.dontcareabout.gxt.client.draw.LayerContainer;
 import us.dontcareabout.gxt.client.draw.LayerSprite;
+import us.dontcareabout.gxt.client.draw.layout.HorizontalLayoutLayer;
+import us.dontcareabout.gxt.client.draw.layout.VerticalLayoutLayer;
 
 //把 Video 變成 PlayerCore 的 field 純粹是因為控制起來比較方便 XD
 //暫時不考慮抽 interface 讓 VideoPlayer 可以自行決定 implementation... [逃]
 class PlayerCore extends LayerContainer {
+	private static int panelHeight = 20;
 	private static int timeFontSize = 14;
-	private static int timeHieght = timeFontSize + 2;
 	private static int timelineHeight = 12;
 
 	Video video = Video.createIfSupported();
 
+	private VerticalLayoutLayer vll = new VerticalLayoutLayer();
+	private ScreenLayer screen = new ScreenLayer();
 	private TimelineLayer timeLine = new TimelineLayer();
 	private TimeLayer time = new TimeLayer();
 
@@ -40,8 +51,11 @@ class PlayerCore extends LayerContainer {
 
 	PlayerCore() {
 		bindEvents(video.getMediaElement());
-		addLayer(time);
-		addLayer(timeLine);
+
+		vll.addChild(screen, 1);
+		vll.addChild(timeLine, timelineHeight);
+		vll.addChild(time, panelHeight);
+		addLayer(vll);
 
 		video.addLoadedMetadataHandler(new LoadedMetadataHandler() {
 			@Override
@@ -69,13 +83,7 @@ class PlayerCore extends LayerContainer {
 
 	@Override
 	protected void adjustMember(int width, int height) {
-		timeLine.setLX(0);
-		timeLine.setLY(height - timeHieght - timelineHeight);
-		timeLine.resize(width, timelineHeight);
-
-		time.setLX(0);
-		time.setLY(height - timeHieght);
-		time.resize(timeFontSize * 9, timeHieght);
+		vll.resize(width, height);
 	}
 
 	private void onTimeupdate() {
@@ -115,6 +123,74 @@ class PlayerCore extends LayerContainer {
 			self.@us.dontcareabout.avMine.client.component.player.PlayerCore::onTimeupdate()();
 		});
 	}-*/;
+
+	private class ScreenLayer extends HorizontalLayoutLayer {
+		private static final int l_r_width = 30;
+		private IconPanel previous = new IconPanel(Material.icon_AngleLeft());
+		private LayerSprite main = new LayerSprite();
+		private IconPanel next = new IconPanel(Material.icon_AngleRight());
+
+		ScreenLayer() {
+			setGap(1);	//讓 over / out 一定能正常運作
+			main.addSpriteSelectionHandler(new SpriteSelectionHandler() {
+				@Override
+				public void onSpriteSelect(SpriteSelectionEvent event) {
+					if (duration == -1) { return; }
+
+					if (video.isPaused()) {
+						video.play();
+					} else {
+						video.pause();
+					}
+				}
+			});
+
+			addChild(previous, l_r_width);
+			addChild(main, 1);
+			addChild(next, l_r_width);
+		}
+
+		private class IconPanel extends LayerSprite {
+			private final LImageSprite icon;
+
+			IconPanel(ImageResource img) {
+				icon = new LImageSprite(img);
+				icon.setStrokeWidth(10);
+				add(icon);
+
+				setBgColor(RGB.LIGHTGRAY);
+				setOpacity(0);
+
+				addSpriteOverHandler(new SpriteOverHandler() {
+					@Override
+					public void onSpriteOver(SpriteOverEvent event) {
+						setOpacity(0.15);
+					}
+				});
+				addSpriteOutHandler(new SpriteOutHandler() {
+					@Override
+					public void onSpriteLeave(SpriteOutEvent event) {
+						setOpacity(0);
+					}
+				});
+
+			}
+
+			@Override
+			protected void adjustMember() {
+				double width = getWidth();
+				icon.setWidth(width);
+				icon.setHeight(width);
+				icon.setLX(0);
+				icon.setLY((getHeight() - icon.getHeight()) / 2);
+			}
+
+			private void setOpacity(double value) {
+				setBgOpacity(value);
+				icon.setOpacity(value * 3);
+			}
+		}
+	}
 
 	private class TimelineLayer extends BaseLS {
 		final int barYMargin = 2;
